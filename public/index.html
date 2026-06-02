@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Gerador XML DUIMP</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; padding: 40px; display: flex; justify-content: center; }
+        .container { background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
+        h2 { text-align: center; color: #333; margin-top: 0; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; color: #444; }
+        select, input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        .btn-green { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px;}
+        .btn-green:hover { background-color: #218838; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
+        .btn-small { background: #6c757d; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;}
+        .ajuda { font-size: 12px; color: #777; margin-top: 4px; display: block; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <span id="userLogado"></span>
+        <div>
+            <button class="btn-small" onclick="window.location.href='admin.html'" id="btnAdmin" style="display:none; background:#17a2b8;">Painel</button>
+            <button class="btn-small" onclick="mudarSenha()">Senha</button>
+            <button class="btn-small" onclick="sair()">Sair</button>
+        </div>
+    </div>
+    <h2>Gerador DUIMP</h2>
+    
+    <div class="form-group">
+        <label>Empresa (Importador):</label>
+        <select id="cnpjSelect"><option value="">Carregando...</option></select>
+    </div>
+
+    <div class="form-group">
+        <label>Número da DUIMP:</label>
+        <input type="text" id="duimpInput" placeholder="Ex: 26BR00006886079">
+    </div>
+
+    <div class="form-group">
+        <label>Versão da DUIMP:</label>
+        <input type="number" id="versaoInput" value="1" min="1">
+        <span class="ajuda">Informe a versão desejada (ex: 1 para original, 2 para retificada).</span>
+    </div>
+
+    <button class="btn-green" onclick="gerar()">Gerar e Baixar XML</button>
+</div>
+
+<script>
+    fetch('/api/check-auth').then(r=>r.json()).then(d => { 
+        if(!d.logado) window.location.href="login.html"; 
+        document.getElementById('userLogado').innerText = "Olá, " + d.usuario;
+        if(d.perfil === 'admin') document.getElementById('btnAdmin').style.display = 'inline-block';
+    });
+
+    async function carregarEmpresas() {
+        const res = await fetch('/api/clientes');
+        const empresas = await res.json();
+        const select = document.getElementById('cnpjSelect');
+        select.innerHTML = '<option value="">-- Selecione a Empresa --</option>';
+        empresas.forEach(e => { 
+            // Mostra o nome e o CNPJ completo formatado bonitinho na lista
+            select.innerHTML += `<option value="${e.id}">${e.nome} (CNPJ: ${e.cnpjCompleto})</option>`; 
+        });
+    }
+
+    function gerar() {
+        const id_cliente = document.getElementById('cnpjSelect').value;
+        const duimp = document.getElementById('duimpInput').value.trim();
+        const versao = document.getElementById('versaoInput').value.trim();
+        
+        if(!id_cliente || !duimp || !versao) return alert("Selecione a empresa, informe a DUIMP e a Versão.");
+        
+        window.location.href = `/api/gerar-duimp?id_cliente=${id_cliente}&numero_duimp=${duimp}&versao=${versao}`;
+    }
+
+    async function mudarSenha() {
+        const nova = prompt("Nova senha:");
+        if(nova) { await fetch('/api/usuarios/senha', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({novaSenha: nova}) }); alert("Senha alterada com sucesso!"); }
+    }
+    async function sair() { await fetch('/api/logout', { method: 'POST' }); window.location.href = "login.html"; }
+
+    carregarEmpresas();
+</script>
+</body>
+</html>

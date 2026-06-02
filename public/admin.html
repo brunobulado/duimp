@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel Administrativo</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f8f9fa; padding: 20px; }
+        .container { max-width: 950px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        label { font-weight: bold; font-size: 13px; color: #555; }
+        input, select { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #28a745; color: white; border: none; padding: 10px 15px; font-weight: bold; border-radius: 4px; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 30px;}
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 14px; }
+        th { background: #f1f1f1; }
+        .btn-del { background: #dc3545; padding: 5px 10px; font-size: 12px; border-radius:3px; color: white; border: none; cursor:pointer;}
+        .btn-edit { background: #ffc107; padding: 5px 10px; font-size: 12px; border-radius:3px; color: #333; border: none; cursor:pointer;}
+        .btn-reset { background: #17a2b8; padding: 5px 10px; font-size: 12px; border-radius:3px; color: white; border: none; cursor:pointer;}
+        .section-title { border-bottom: 2px solid #007bff; padding-bottom: 5px; margin-top: 40px;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h2>Painel Admin</h2>
+        <div>
+            <button style="background:#007bff;" onclick="window.location.href='index.html'">Ir para Gerador XML</button> 
+            <button style="background:#6c757d;" onclick="sair()">Sair</button>
+        </div>
+    </div>
+
+    <h3 class="section-title">1. Clientes (Credenciais Siscomex)</h3>
+    <input type="hidden" id="clienteId">
+    <div class="grid">
+        <div><label>CNPJ Completo (14 dígitos - Apenas Números):</label><input type="text" id="cnpj" maxlength="14" placeholder="Ex: 11731515000199"></div>
+        <div><label>Empresa:</label><input type="text" id="nome"></div>
+        <div><label>Client-Id:</label><input type="text" id="clientId"></div>
+        <div><label>Client-Secret:</label><input type="password" id="clientSecret"></div>
+        <div><label>Perfil (Role):</label><select id="role"><option value="IMPEXP">IMPEXP</option><option value="DESP">DESP</option></select></div>
+    </div>
+    <button onclick="salvarCliente()" id="btnSalvarCli">Salvar Cliente</button>
+    <button onclick="limparFormCliente()" style="background:#6c757d;">Cancelar Edição</button>
+    
+    <table>
+        <thead><tr><th>CNPJ Completo</th><th>Empresa</th><th>Perfil</th><th style="width: 130px;">Ações</th></tr></thead>
+        <tbody id="tbClientes"></tbody>
+    </table>
+
+    <h3 class="section-title">2. Usuários do Sistema</h3>
+    <div class="grid">
+        <div><label>Login:</label><input type="text" id="usr"></div>
+        <div><label>Senha:</label><input type="password" id="pwd"></div>
+        <div><label>Nível:</label><select id="usrRole"><option value="operador">Operador (Apenas Gera XML)</option><option value="admin">Administrador</option></select></div>
+    </div>
+    <button style="background:#007bff;" onclick="salvarUsuario()">Criar Usuário</button>
+    
+    <table>
+        <thead><tr><th>Usuário</th><th>Perfil</th><th style="width: 160px;">Ações</th></tr></thead>
+        <tbody id="tbUsuarios"></tbody>
+    </table>
+</div>
+
+<script>
+    let clientesCache = [];
+
+    fetch('/api/check-auth').then(r=>r.json()).then(d => { if(!d.logado || d.perfil !== 'admin') window.location.href="login.html"; });
+
+    async function carregar() {
+        const rC = await fetch('/api/clientes'); 
+        clientesCache = await rC.json();
+        
+        document.getElementById('tbClientes').innerHTML = clientesCache.map(c => 
+            `<tr>
+                <td>${c.cnpjCompleto || c.cnpjRaiz}</td>
+                <td>${c.nome}</td>
+                <td>${c.roleType}</td>
+                <td>
+                    <button class="btn-edit" onclick="editarCliente('${c.id}')">Editar</button>
+                    <button class="btn-del" onclick="delCliente('${c.id}')">X</button>
+                </td>
+            </tr>`
+        ).join('');
+        
+        const rU = await fetch('/api/usuarios'); 
+        const usuarios = await rU.json();
+        
+        document.getElementById('tbUsuarios').innerHTML = usuarios.map(u => 
+            `<tr>
+                <td>${u.usuario}</td>
+                <td>${u.perfil}</td>
+                <td>
+                    <button class="btn-reset" onclick="resetarSenha('${u.id}', '${u.usuario}')">Resetar Senha</button>
+                    <button class="btn-del" onclick="delUsuario('${u.id}')">X</button>
+                </td>
+            </tr>`
+        ).join('');
+    }
+
+    function editarCliente(id) {
+        const c = clientesCache.find(x => x.id === id);
+        if(!c) return;
+        document.getElementById('clienteId').value = c.id;
+        document.getElementById('cnpj').value = c.cnpjCompleto || c.cnpjRaiz;
+        document.getElementById('nome').value = c.nome;
+        document.getElementById('clientId').value = c.clientId;
+        document.getElementById('clientSecret').value = c.clientSecret;
+        document.getElementById('role').value = c.roleType;
+        document.getElementById('btnSalvarCli').innerText = "Atualizar Cliente";
+        window.scrollTo(0, 0);
+    }
+
+    function limparFormCliente() {
+        document.getElementById('clienteId').value = '';
+        document.getElementById('cnpj').value = '';
+        document.getElementById('nome').value = '';
+        document.getElementById('clientId').value = '';
+        document.getElementById('clientSecret').value = '';
+        document.getElementById('btnSalvarCli').innerText = "Salvar Cliente";
+    }
+
+    async function salvarCliente() {
+        const c = { 
+            id: document.getElementById('clienteId').value,
+            cnpjCompleto: document.getElementById('cnpj').value.replace(/\D/g, ''), 
+            nome: document.getElementById('nome').value.trim(), 
+            clientId: document.getElementById('clientId').value.trim(), 
+            clientSecret: document.getElementById('clientSecret').value.trim(), 
+            roleType: document.getElementById('role').value 
+        };
+        
+        if(!c.cnpjCompleto || !c.clientId) return alert("CNPJ e Client-Id são obrigatórios.");
+        
+        await fetch('/api/clientes', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(c) }); 
+        limparFormCliente();
+        carregar();
+    }
+
+    async function salvarUsuario() {
+        const u = { usuario: document.getElementById('usr').value.trim(), senha: document.getElementById('pwd').value, perfil: document.getElementById('usrRole').value };
+        if(!u.usuario || !u.senha) return alert("Preencha usuário e senha!");
+        await fetch('/api/usuarios', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(u) }); 
+        document.getElementById('usr').value = '';
+        document.getElementById('pwd').value = '';
+        carregar();
+    }
+
+    async function resetarSenha(id, nomeUsuario) {
+        const nova = prompt(`Digite a nova senha para o usuário [${nomeUsuario}]:`);
+        if(!nova) return;
+        await fetch(`/api/usuarios/${id}/reset-senha`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({novaSenha: nova}) }); 
+        alert("Senha atualizada com sucesso!");
+    }
+
+    async function delCliente(id) { if(confirm("Remover cliente?")) { await fetch(`/api/clientes/${id}`, { method: 'DELETE' }); carregar(); } }
+    async function delUsuario(id) { if(confirm("Remover usuário?")) { await fetch(`/api/usuarios/${id}`, { method: 'DELETE' }); carregar(); } }
+    async function sair() { await fetch('/api/logout', { method: 'POST' }); window.location.href = "login.html"; }
+    
+    carregar();
+</script>
+</body>
+</html>

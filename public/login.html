@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #343a40; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .box { background: white; padding: 30px; border-radius: 8px; width: 300px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        h2 { text-align: center; margin-top: 0; color: #333; }
+        input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #007bff; border: none; color: white; font-weight: bold; cursor: pointer; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>Acesso</h2>
+        <input type="text" id="user" placeholder="Usuário">
+        <input type="password" id="pass" placeholder="Senha">
+        <button onclick="logar()">Entrar</button>
+    </div>
+    <script>
+        async function logar() {
+            const res = await fetch('/api/login', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({usuario: document.getElementById('user').value, senha: document.getElementById('pass').value}) });
+            const data = await res.json();
+            if(data.success) window.location.href = data.perfil === 'admin' ? "admin.html" : "index.html"; else alert("Acesso Negado");
+        }
+    </script>
+</body>
+</html>
