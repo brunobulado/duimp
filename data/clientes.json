@@ -1,29 +1,11 @@
 [
     {
-        "cnpjRaiz": "11731515",
-        "nome": "Fazyp",
-        "clientId": "TLdyM0jv50W72Se7Yv6GhPW7QrTZEPkd",
-        "clientSecret": "3jezpWM58uqj5AmLYdVVoKTM49YEbwo7",
+        "cnpjRaiz": "01234567",
+        "nome": "Teste",
+        "clientId": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "clientSecret": "********************************",
         "roleType": "IMPEXP",
-        "id": "1780089011660164",
-        "cnpjCompleto": "11731515"
-    },
-    {
-        "cnpjRaiz": "42597705",
-        "nome": "Gravtah",
-        "clientId": "uQ9FZFNTeaTmwDlHLE_KNZrvAeGmJINP",
-        "clientSecret": "bWL1ikJJXSLCVOGuZtFkAZmTtdCVLLKH",
-        "roleType": "IMPEXP",
-        "id": "1780089011660833",
-        "cnpjCompleto": "42597705"
-    },
-    {
-        "id": "1780337528152",
-        "cnpjCompleto": "09662555000173",
-        "nome": "Priori Biomedical",
-        "clientId": "CxGORMcaWE2YI6_lmrGCEYWZXEKeZ-ki",
-        "clientSecret": "kEBukAfy-PLFjsgLi6CgVQIW81pZH2De",
-        "roleType": "IMPEXP",
-        "cnpjRaiz": "09662555"
+        "id": "12345678987654321",
+        "cnpjCompleto": "01234567"
     }
 ]
